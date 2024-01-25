@@ -1,12 +1,15 @@
 package handlers
 
 import (
-	"fmt"
+	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+
+	"github.com/dyd40000/myapi/models"
 )
 
 func HelloHandler(w http.ResponseWriter, req *http.Request) {
@@ -14,44 +17,48 @@ func HelloHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func PostArticleHandler(w http.ResponseWriter, req *http.Request) {
-	io.WriteString(w, "Posting Article...\n")
+	// req.Body（ストリーム）を格納する変数
+	var reqArticle models.Article
+
+	if err := json.NewDecoder(req.Body).Decode(&reqArticle); err != nil {
+		http.Error(w, "failed to decode json", http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(reqArticle)
 }
 
 func ArticleListHandler(w http.ResponseWriter, req *http.Request) {
-	/* 仕様
-	pageの変数が数字だった場合は記事一覧ページのxページ目に表示されるデータを返す
-	pageに対応する複数の数字が含まれる場合は最初の値を使用する
-	xが数字でなかった場合には400を返す
-	クエリパラメーがURLについていなかった場合には、page=1がついているとみなす
+	/*
+		仕様：
+		pageの変数が数字だった場合は記事一覧ページのxページ目に表示されるデータを返す
+		pageに対応する複数の数字が含まれる場合は最初の値を使用する
+		xが数字でなかった場合には400を返す
+		クエリパラメーがURLについていなかった場合には、page=1がついているとみなす
 	*/
 
-	/* 初手：リクエストに含まれているクエリパラメータを取得するために、1,2を一気にやる
-	1.reqの*URLフィールドを取得
-	2.Queryメソッドで*URLからクエリパラメータを取得
-	*/
+	// reqの*URLフィールドを取得し、
+	// Queryメソッドで*URL構造体のRawQueryのクエリパラメータを取得
+
 	queryMap := req.URL.Query()
 
-	// 何ページ目の記事が欲しいのかを格納するpage変数を定義する
 	var page int
 
-	// クエリパラメータに"page"をkeyに持つ値が存在していて、かつクエリパラメータが一つ以上
 	if p, ok := queryMap["page"]; ok && len(p) > 0 {
-		// パラメータpageに対応する一つ目の値を取得してintに変換
 		var err error
 		page, err = strconv.Atoi(p[0])
-
-		//数値に変換できない場合＝クエリパラメータが文字列じゃなかった場合はBadRequestで返す
 		if err != nil {
 			http.Error(w, "Invalid query Parameter", http.StatusBadRequest)
 			return
 		}
-		//パラメータにpage"をkeyに持つ値が存在していない場合
 	} else {
-		// page=1と同じ処理をする
 		page = 1
 	}
-	resString := fmt.Sprintf("Article List(page%d)\n", page)
-	io.WriteString(w, resString)
+
+	log.Println(page)
+
+	articleList := []models.Article{models.Article1, models.Article2}
+	json.NewEncoder(w).Encode(articleList)
 }
 
 func ArticleDetailHandler(w http.ResponseWriter, req *http.Request) {
@@ -60,14 +67,19 @@ func ArticleDetailHandler(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Invalid query parameter", http.StatusBadRequest)
 		return
 	}
-	resString := fmt.Sprintf("Article No.%d\n", articleID)
-	io.WriteString(w, resString)
+	log.Println(articleID)
+	json.NewEncoder(w).Encode(models.Article1)
 }
 
 func ArticleNiceHandler(w http.ResponseWriter, req *http.Request) {
-	io.WriteString(w, "Posting Nice")
+	json.NewEncoder(w).Encode(models.Article1)
 }
 
 func PostCommentHandler(w http.ResponseWriter, req *http.Request) {
-	io.WriteString(w, "Posting Comment")
+	var reqComment models.Comment
+	if err := json.NewDecoder(req.Body).Decode(&reqComment); err != nil {
+		http.Error(w, "failed to decode json", http.StatusBadRequest)
+		return
+	}
+	json.NewEncoder(w).Encode(reqComment)
 }
