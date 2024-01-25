@@ -41,7 +41,6 @@ func SelectArticleList(db *sql.DB, page int) ([]models.Article, error) {
 		select * from article 
 		limit ? offset ?;
 		`
-	// queryでページリストの取得
 	// offsetには、どのページまで飛ばすか、を指定する。
 	// 3ページが指定されたら、2ページまで飛ばせば良い。つまり、((指定されたページ-1)*1ページごとの記事数)
 	rows, err := db.Query(sqlStr, articleNumPerPage, ((page - 1) * articleNumPerPage))
