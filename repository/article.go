@@ -41,8 +41,8 @@ func SelectArticleList(db *sql.DB, page int) ([]models.Article, error) {
 		select * from article 
 		limit ? offset ?;
 		`
-	// offsetには、どのページまで飛ばすか、を指定する。
-	// 3ページが指定されたら、2ページまで飛ばせば良い。つまり、((指定されたページ-1)*1ページごとの記事数)
+	// offsetにはどのページまでSKIPするかを指定する。
+	// 3ページが指定されたら、2ページまで飛ばせば良い。つまり、((指定されたページ-1)*1ページごとの記事数)がoffsetに入ればよい
 	rows, err := db.Query(sqlStr, articleNumPerPage, ((page - 1) * articleNumPerPage))
 	if err != nil {
 		return []models.Article{}, err
@@ -88,8 +88,46 @@ func SlectArticleDetail(db *sql.DB, articleID int) (models.Article, error) {
 
 // いいねの数をupdateする関数
 // ->発生したエラーを返り値にする
-func UpdateNiceNum(db *sql.DB) error {
-	// const sqlStr
-	// db.Exec
+func UpdateNiceNum(db *sql.DB, articleID int) error {
+	// 1.begin
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	// 2.select nicenum
+	const selectNiceNumStr = `
+		select nice 
+		from article
+		where article_id = ?;
+	`
+	row := tx.QueryRow(selectNiceNumStr, articleID)
+	if err := row.Err(); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	var niceNum int
+	err = row.Scan(&niceNum)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 3.insert nicenum+1
+	const updateNiceNumStr = `
+		update article 
+		set = ?
+		where article_id = ?;
+	`
+	_, err = tx.Exec(updateNiceNumStr, niceNum+1, articleID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return err
+	}
 	return nil
 }
