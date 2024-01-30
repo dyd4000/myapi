@@ -11,7 +11,7 @@ import (
 func InsertComment(db *sql.DB, comment models.Comment) (models.Comment, error) {
 	// const sqlStr
 	const sqlStr = `
-		isnert into comment() values(?,?,now());
+		insert into comment(article_id,message,created_at) values(?,?,now());
 	`
 	newCommnet := models.Comment{
 		ArticleID: comment.ArticleID,
@@ -32,7 +32,7 @@ func InsertComment(db *sql.DB, comment models.Comment) (models.Comment, error) {
 func SelectCommentList(db *sql.DB, articleID int) ([]models.Comment, error) {
 	// const
 	const sqlStr = `
-		select message
+		select *
 		from comment
 		where article_id = ?;
 	`
@@ -48,7 +48,7 @@ func SelectCommentList(db *sql.DB, articleID int) ([]models.Comment, error) {
 	for rows.Next() {
 		var comment models.Comment
 		var createdTime sql.NullTime
-		rows.Scan(&comment.ArticleID, &comment.Message, &createdTime)
+		rows.Scan(&comment.CommentID, &comment.ArticleID, &comment.Message, &createdTime)
 		if createdTime.Valid {
 			comment.CreatedAt = createdTime.Time
 		}

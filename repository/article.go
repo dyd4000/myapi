@@ -2,7 +2,9 @@ package repository
 
 import (
 	"database/sql"
-	"dbsample/models"
+	"fmt"
+
+	"github.com/dyd40000/myapi/models"
 )
 
 const (
@@ -14,7 +16,7 @@ const (
 func InsertArticle(db *sql.DB, article models.Article) (models.Article, error) {
 	// クエリの定義
 	const sqlStr = `
-		isnert into article(title,contents,user_name,nice,created_at) vlaues(?,?,?,0,now());
+		insert into article(title,contents,username,nice,created_at) values(?,?,?,0,now());
 	`
 	// 戻り値の定義
 	newArticle := models.Article{
@@ -62,7 +64,7 @@ func SelectArticleList(db *sql.DB, page int) ([]models.Article, error) {
 
 // 記事IDを指定して、記事データを取得する関数
 // ->取得した記事データと、発生したエラーを返り値にする
-func SlectArticleDetail(db *sql.DB, articleID int) (models.Article, error) {
+func SelectArticleDetail(db *sql.DB, articleID int) (models.Article, error) {
 	// select文宣言
 	const selectArticleStr = `
 		select *
@@ -77,8 +79,8 @@ func SlectArticleDetail(db *sql.DB, articleID int) (models.Article, error) {
 	}
 	var article models.Article
 	var createdTime sql.NullTime
-	if err := row.Scan(&article.Title, &article.Contents, &article.UserName, &createdTime); err != nil {
-		return models.Article{}, nil
+	if err := row.Scan(&article.ID, &article.Title, &article.Contents, &article.UserName, &article.NiceNum, &createdTime); err != nil {
+		return models.Article{}, err
 	}
 	if createdTime.Valid {
 		article.CreatedAt = createdTime.Time
@@ -116,11 +118,12 @@ func UpdateNiceNum(db *sql.DB, articleID int) error {
 	// 3.insert nicenum+1
 	const updateNiceNumStr = `
 		update article 
-		set = ?
+		set nice = ?
 		where article_id = ?;
 	`
 	_, err = tx.Exec(updateNiceNumStr, niceNum+1, articleID)
 	if err != nil {
+		fmt.Println("updateでおちた")
 		tx.Rollback()
 		return err
 	}
@@ -129,5 +132,6 @@ func UpdateNiceNum(db *sql.DB, articleID int) error {
 		tx.Rollback()
 		return err
 	}
+
 	return nil
 }
