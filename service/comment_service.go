@@ -5,12 +5,8 @@ import (
 	"github.com/dyd40000/myapi/repository"
 )
 
-func PostCommentService(comment models.Comment) (models.Comment, error) {
-	db, err := connectDB()
-	if err != nil {
-		return models.Comment{}, err
-	}
-	newCommnet, err := repository.InsertComment(db, comment)
+func (s *MyAppService) PostCommentService(comment models.Comment) (models.Comment, error) {
+	newCommnet, err := repository.InsertComment(s.db, comment)
 	if err != nil {
 		return models.Comment{}, err
 	}

@@ -15,19 +15,13 @@ import (
 - 引数は、レポジトリ層で操作したいキー情報
 - 戻り値はハンドラ層に返したい情報
 */
-func GetArticleService(articleID int) (models.Article, error) {
-	db, err := connectDB()
-	if err != nil {
-		return models.Article{}, err
-	}
-	defer db.Close()
-
-	article, err := repository.SelectArticleDetail(db, articleID)
+func (s *MyAppService) GetArticleService(articleID int) (models.Article, error) {
+	article, err := repository.SelectArticleDetail(s.db, articleID)
 	if err != nil {
 		return models.Article{}, err
 	}
 
-	comments, err := repository.SelectCommentList(db, articleID)
+	comments, err := repository.SelectCommentList(s.db, articleID)
 	fmt.Println("for-rangeで取得したcommentsの中身をみる")
 	for _, comment := range comments {
 		fmt.Printf("comment.message:%s\n", comment.Message)
@@ -41,14 +35,8 @@ func GetArticleService(articleID int) (models.Article, error) {
 	return article, nil
 }
 
-func PostArticleService(article models.Article) (models.Article, error) {
-	db, err := connectDB()
-	if err != nil {
-		return models.Article{}, nil
-	}
-	defer db.Close()
-
-	newArticle, err := repository.InsertArticle(db, article)
+func (s *MyAppService) PostArticleService(article models.Article) (models.Article, error) {
+	newArticle, err := repository.InsertArticle(s.db, article)
 	if err != nil {
 		return models.Article{}, err
 	}
@@ -56,29 +44,16 @@ func PostArticleService(article models.Article) (models.Article, error) {
 	return newArticle, nil
 }
 
-func GetArticleListService(page int) ([]models.Article, error) {
-	db, err := connectDB()
+func (s *MyAppService) GetArticleListService(page int) ([]models.Article, error) {
+	articleList, err := repository.SelectArticleList(s.db, page)
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
-
-	articleList, err := repository.SelectArticleList(db, page)
-	if err != nil {
-		return nil, err
-	}
-
 	return articleList, nil
 }
 
-func PostNiceService(article models.Article) (models.Article, error) {
-	db, err := connectDB()
-	if err != nil {
-		return models.Article{}, nil
-	}
-	defer db.Close()
-
-	if err := repository.UpdateNiceNum(db, article.ID); err != nil {
+func (s *MyAppService) PostNiceService(article models.Article) (models.Article, error) {
+	if err := repository.UpdateNiceNum(s.db, article.ID); err != nil {
 		return models.Article{}, err
 	}
 

@@ -1,4 +1,4 @@
-package handlers
+package controller
 
 import (
 	"encoding/json"
@@ -13,11 +13,19 @@ import (
 	"github.com/dyd40000/myapi/service"
 )
 
-func HelloHandler(w http.ResponseWriter, req *http.Request) {
+type MyAppController struct {
+	service *service.MyAppService
+}
+
+func NewMyAppController(s *service.MyAppService) *MyAppController {
+	return &MyAppController{service: s}
+}
+
+func (c *MyAppController) HelloHandler(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, "Hello, world!\n")
 }
 
-func PostArticleHandler(w http.ResponseWriter, req *http.Request) {
+func (c *MyAppController) PostArticleHandler(w http.ResponseWriter, req *http.Request) {
 	// req.Body（ストリーム）を格納する変数
 	var reqArticle models.Article
 
@@ -26,7 +34,7 @@ func PostArticleHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	newArticle, err := service.PostArticleService(reqArticle)
+	newArticle, err := c.service.PostArticleService(reqArticle)
 	if err != nil {
 		http.Error(w, "failed to post article\n", http.StatusInternalServerError)
 		return
@@ -35,7 +43,7 @@ func PostArticleHandler(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(newArticle)
 }
 
-func ArticleListHandler(w http.ResponseWriter, req *http.Request) {
+func (c *MyAppController) ArticleListHandler(w http.ResponseWriter, req *http.Request) {
 	/*
 		仕様：
 		pageの変数が数字だった場合は記事一覧ページのxページ目に表示されるデータを返す
@@ -62,7 +70,7 @@ func ArticleListHandler(w http.ResponseWriter, req *http.Request) {
 		page = 1
 	}
 
-	articleList, err := service.GetArticleListService(page)
+	articleList, err := c.service.GetArticleListService(page)
 	if err != nil {
 		http.Error(w, "failed to get article list", http.StatusInternalServerError)
 		return
@@ -71,14 +79,14 @@ func ArticleListHandler(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(articleList)
 }
 
-func ArticleDetailHandler(w http.ResponseWriter, req *http.Request) {
+func (c *MyAppController) ArticleDetailHandler(w http.ResponseWriter, req *http.Request) {
 	articleID, err := strconv.Atoi(mux.Vars(req)["id"])
 	if err != nil {
 		http.Error(w, "Invalid query parameter\n", http.StatusBadRequest)
 		return
 	}
 
-	article, err := service.GetArticleService(articleID)
+	article, err := c.service.GetArticleService(articleID)
 	if err != nil {
 		http.Error(w, "failed to get article\n", http.StatusInternalServerError)
 		return
@@ -87,7 +95,7 @@ func ArticleDetailHandler(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(article)
 }
 
-func ArticleNiceHandler(w http.ResponseWriter, req *http.Request) {
+func (c *MyAppController) ArticleNiceHandler(w http.ResponseWriter, req *http.Request) {
 	var reqArticle models.Article
 
 	if err := json.NewDecoder(req.Body).Decode(&reqArticle); err != nil {
@@ -95,7 +103,7 @@ func ArticleNiceHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	article, err := service.PostNiceService(reqArticle)
+	article, err := c.service.PostNiceService(reqArticle)
 	if err != nil {
 		http.Error(w, "failed to post nice\n", http.StatusInternalServerError)
 		return
@@ -104,7 +112,7 @@ func ArticleNiceHandler(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(article)
 }
 
-func PostCommentHandler(w http.ResponseWriter, req *http.Request) {
+func (c *MyAppController) PostCommentHandler(w http.ResponseWriter, req *http.Request) {
 	var reqComment models.Comment
 
 	if err := json.NewDecoder(req.Body).Decode(&reqComment); err != nil {
@@ -112,8 +120,7 @@ func PostCommentHandler(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "failed to decode json", http.StatusBadRequest)
 		return
 	}
-
-	comment, err := service.PostCommentService(reqComment)
+	comment, err := c.service.PostCommentService(reqComment)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "failed to post comment\n", http.StatusInternalServerError)
