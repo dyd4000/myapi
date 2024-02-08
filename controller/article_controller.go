@@ -2,30 +2,29 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
 
+	"github.com/dyd40000/myapi/controller/service"
 	"github.com/dyd40000/myapi/models"
-	"github.com/dyd40000/myapi/service"
 )
 
-type MyAppController struct {
-	service *service.MyAppService
+type ArticleController struct {
+	service service.ArticleServicer
 }
 
-func NewMyAppController(s *service.MyAppService) *MyAppController {
-	return &MyAppController{service: s}
+func NewArticleController(s service.ArticleServicer) *ArticleController {
+	return &ArticleController{service: s}
 }
 
-func (c *MyAppController) HelloHandler(w http.ResponseWriter, req *http.Request) {
+func (c *ArticleController) HelloHandler(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, "Hello, world!\n")
 }
 
-func (c *MyAppController) PostArticleHandler(w http.ResponseWriter, req *http.Request) {
+func (c *ArticleController) PostArticleHandler(w http.ResponseWriter, req *http.Request) {
 	// req.Body（ストリーム）を格納する変数
 	var reqArticle models.Article
 
@@ -43,7 +42,7 @@ func (c *MyAppController) PostArticleHandler(w http.ResponseWriter, req *http.Re
 	json.NewEncoder(w).Encode(newArticle)
 }
 
-func (c *MyAppController) ArticleListHandler(w http.ResponseWriter, req *http.Request) {
+func (c *ArticleController) ArticleListHandler(w http.ResponseWriter, req *http.Request) {
 	/*
 		仕様：
 		pageの変数が数字だった場合は記事一覧ページのxページ目に表示されるデータを返す
@@ -79,7 +78,7 @@ func (c *MyAppController) ArticleListHandler(w http.ResponseWriter, req *http.Re
 	json.NewEncoder(w).Encode(articleList)
 }
 
-func (c *MyAppController) ArticleDetailHandler(w http.ResponseWriter, req *http.Request) {
+func (c *ArticleController) ArticleDetailHandler(w http.ResponseWriter, req *http.Request) {
 	articleID, err := strconv.Atoi(mux.Vars(req)["id"])
 	if err != nil {
 		http.Error(w, "Invalid query parameter\n", http.StatusBadRequest)
@@ -95,7 +94,7 @@ func (c *MyAppController) ArticleDetailHandler(w http.ResponseWriter, req *http.
 	json.NewEncoder(w).Encode(article)
 }
 
-func (c *MyAppController) ArticleNiceHandler(w http.ResponseWriter, req *http.Request) {
+func (c *ArticleController) ArticleNiceHandler(w http.ResponseWriter, req *http.Request) {
 	var reqArticle models.Article
 
 	if err := json.NewDecoder(req.Body).Decode(&reqArticle); err != nil {
@@ -110,22 +109,4 @@ func (c *MyAppController) ArticleNiceHandler(w http.ResponseWriter, req *http.Re
 	}
 
 	json.NewEncoder(w).Encode(article)
-}
-
-func (c *MyAppController) PostCommentHandler(w http.ResponseWriter, req *http.Request) {
-	var reqComment models.Comment
-
-	if err := json.NewDecoder(req.Body).Decode(&reqComment); err != nil {
-		fmt.Println(err)
-		http.Error(w, "failed to decode json", http.StatusBadRequest)
-		return
-	}
-	comment, err := c.service.PostCommentService(reqComment)
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, "failed to post comment\n", http.StatusInternalServerError)
-		return
-	}
-
-	json.NewEncoder(w).Encode(comment)
 }
